@@ -39,7 +39,7 @@ export default function HackathonsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-400 mb-6">해커톤 목록</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">해커톤 목록</h1>
 
       {/* 상태 필터 */}
       <div className="flex flex-wrap gap-2 mb-4">

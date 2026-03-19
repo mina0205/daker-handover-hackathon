@@ -1,26 +1,136 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f9fafb;
+  --foreground: #111827;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== 다크모드 전역 스타일 ===== */
+
+/* 배경 */
+.dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-gray-50 { background-color: #162032 !important; }
+.dark .bg-gray-100 { background-color: #334155 !important; }
+.dark .bg-gray-200 { background-color: #475569 !important; }
+
+/* 텍스트 */
+.dark .text-gray-900 { color: #f1f5f9 !important; }
+.dark .text-gray-800 { color: #e2e8f0 !important; }
+.dark .text-gray-700 { color: #cbd5e1 !important; }
+.dark .text-gray-600 { color: #94a3b8 !important; }
+.dark .text-gray-500 { color: #94a3b8 !important; }
+.dark .text-gray-400 { color: #64748b !important; }
+
+/* 보더 */
+.dark .border-gray-200 { border-color: #334155 !important; }
+.dark .border-gray-300 { border-color: #475569 !important; }
+.dark .border-b { border-color: #334155 !important; }
+
+/* 그림자 */
+.dark .shadow-sm { box-shadow: 0 1px 2px rgba(0,0,0,0.4) !important; }
+.dark .shadow-lg { box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+.dark .shadow-2xl { box-shadow: 0 8px 24px rgba(0,0,0,0.6) !important; }
+
+/* input / textarea / select */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #3b82f6 !important;
+}
+
+/* 테이블 */
+.dark th { background-color: #162032 !important; color: #cbd5e1 !important; }
+.dark td { color: #cbd5e1 !important; }
+.dark tr:hover { background-color: #1e3048 !important; }
+.dark .border-b { border-color: #334155 !important; }
+
+/* 알림/안내 박스 */
+.dark .bg-blue-50 { background-color: #172554 !important; }
+.dark .text-blue-800 { color: #93c5fd !important; }
+.dark .text-blue-700 { color: #93c5fd !important; }
+.dark .text-blue-600 { color: #60a5fa !important; }
+.dark .text-blue-500 { color: #60a5fa !important; }
+
+.dark .bg-yellow-50 { background-color: #422006 !important; }
+.dark .border-yellow-200 { border-color: #854d0e !important; }
+.dark .border-yellow-300 { border-color: #a16207 !important; }
+.dark .text-yellow-500 { color: #fbbf24 !important; }
+
+.dark .bg-green-100 { background-color: #14532d !important; }
+.dark .text-green-700 { color: #86efac !important; }
+
+.dark .bg-red-100 { background-color: #450a0a !important; }
+.dark .text-red-600 { color: #fca5a5 !important; }
+.dark .text-red-500 { color: #f87171 !important; }
+
+.dark .bg-purple-100 { background-color: #3b0764 !important; }
+.dark .text-purple-700 { color: #d8b4fe !important; }
+
+.dark .bg-orange-100 { background-color: #431407 !important; }
+.dark .text-orange-700 { color: #fdba74 !important; }
+.dark .bg-orange-50 { background-color: #431407 !important; }
+.dark .border-orange-300 { border-color: #c2410c !important; }
+
+/* 상태 배지 */
+.dark .bg-blue-100 { background-color: #1e3a5f !important; }
+.dark .text-blue-700 { color: #93c5fd !important; }
+.dark .bg-gray-100.text-gray-500 { background-color: #334155 !important; }
+
+/* 상금 카드 */
+.dark .bg-yellow-50 { background-color: #422006 !important; }
+.dark .bg-gray-50.border-gray-300 { background-color: #1e293b !important; }
+
+/* 그라디언트 카드 (메인페이지) - 유지 */
+
+/* 모달 오버레이 */
+.dark .bg-black\/50 { background-color: rgba(0,0,0,0.7) !important; }
+
+/* hover 상태 */
+.dark .hover\:bg-gray-50:hover { background-color: #1e3048 !important; }
+.dark .hover\:bg-gray-200:hover { background-color: #475569 !important; }
+.dark .hover\:shadow-lg:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important; }
+.dark .hover\:shadow-md:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important; }
+
+/* 파일 업로드 dashed border */
+.dark .border-dashed { border-color: #475569 !important; }
+.dark .hover\:border-blue-400:hover { border-color: #3b82f6 !important; }
+
+/* 스크롤바 */
+.dark ::-webkit-scrollbar { width: 8px; }
+.dark ::-webkit-scrollbar-track { background: #1e293b; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+/* 스크롤바 숨기기 (탭 등) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 모바일 터치 스크롤 부드럽게 */
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
 }

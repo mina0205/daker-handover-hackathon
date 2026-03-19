@@ -104,3 +104,22 @@ export function removeSubmission(hackathonSlug: string, teamName: string) {
     localStorage.setItem(KEYS.submissions, JSON.stringify(filtered));
   } catch { /* ignore */ }
 }
+
+// 북마크
+export function getBookmarks(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem('bookmarks') || '[]');
+  } catch { return []; }
+}
+
+export function toggleBookmark(slug: string): boolean {
+  const bookmarks = getBookmarks();
+  const idx = bookmarks.indexOf(slug);
+  if (idx === -1) {
+    bookmarks.push(slug);
+  } else {
+    bookmarks.splice(idx, 1);
+  }
+  localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
+  return idx === -1; // true = 추가됨, false = 제거됨
+}

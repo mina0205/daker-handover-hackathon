@@ -8,6 +8,8 @@ import {
 import { HackathonDetail, Team, Leaderboard, Submission } from '@/lib/types';
 import Loading from '@/components/common/Loading';
 import ErrorFallback from '@/components/common/ErrorFallback';
+import DdayCountdown from '@/components/hackathon/DdayCountdown';
+import SubmitProgress from '@/components/hackathon/SubmitProgress';
 import Link from 'next/link';
 
 const TABS = [
@@ -32,14 +34,11 @@ export default function HackathonDetailPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
 
-  // 팀 구성 팝업
   const [showTeamPopup, setShowTeamPopup] = useState(false);
-  // 팀 초대 상태 (간이 시뮬레이션)
   const [inviteStatus, setInviteStatus] = useState<Record<string, 'pending' | 'accepted' | 'rejected'>>({});
 
-  // 제출 폼 상태
   const [submitForm, setSubmitForm] = useState({
-    plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: ''
+    plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: '', web: '', pdf: ''
   });
   const [submitFile, setSubmitFile] = useState<File | null>(null);
 
@@ -57,7 +56,6 @@ export default function HackathonDetailPage() {
 
   const { sections } = detail;
 
-  // 제출 처리
   const handleSubmit = () => {
     if (!submitForm.teamName.trim()) {
       alert('팀명을 입력해주세요.');
@@ -65,12 +63,11 @@ export default function HackathonDetailPage() {
     }
 
     const artifacts: Submission['artifacts'] = {
-      plan: submitForm.plan || undefined,
-      webUrl: submitForm.webUrl || undefined,
-      pdfUrl: submitForm.pdfUrl || undefined,
+      plan: submitForm.plan || submitForm.plan || undefined,
+      webUrl: submitForm.webUrl || submitForm.web || undefined,
+      pdfUrl: submitForm.pdfUrl || submitForm.pdf || undefined,
     };
 
-    // 파일이 있으면 파일명을 기록 (실제로는 localStorage에 파일 저장 불가하므로 이름만 기록)
     if (submitFile) {
       artifacts.fileName = submitFile.name;
       artifacts.fileSize = `${(submitFile.size / 1024).toFixed(1)}KB`;
@@ -86,7 +83,7 @@ export default function HackathonDetailPage() {
 
     addSubmission(newSubmission);
     setSubmissions(getSubmissions(slug));
-    setSubmitForm({ plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: '' });
+    setSubmitForm({ plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: '', web: '', pdf: '' });
     setSubmitFile(null);
     alert('제출 완료!');
   };
@@ -98,7 +95,6 @@ export default function HackathonDetailPage() {
     }
   };
 
-  // 초대/수락/거절 핸들러
   const handleInvite = (teamCode: string) => {
     setInviteStatus(prev => ({ ...prev, [teamCode]: 'pending' }));
   };
@@ -109,40 +105,29 @@ export default function HackathonDetailPage() {
     setInviteStatus(prev => ({ ...prev, [teamCode]: 'rejected' }));
   };
 
-  // 리더보드에서 미제출 팀 처리
   const getLeaderboardWithStatus = () => {
     if (!leaderboard) return [];
-
-    const submittedTeamNames = new Set(
-      leaderboard.entries.map(e => e.teamName)
-    );
-
-    // 제출된 팀 엔트리
+    const submittedTeamNames = new Set(leaderboard.entries.map(e => e.teamName));
     const entries = [...leaderboard.entries];
-
-    // 참가 팀 중 리더보드에 없는 팀 = 미제출
     teams.forEach(t => {
       if (!submittedTeamNames.has(t.name)) {
         entries.push({
           rank: 0,
           teamName: t.name,
-          score: -1, // 미제출 표기용
+          score: -1,
           submittedAt: '',
         });
       }
     });
-
     return entries;
   };
 
   return (
     <div>
-      {/* 헤더 */}
       <h1 className="text-2xl font-bold text-gray-900 mb-2">{detail.title}</h1>
       <p className="text-gray-500 mb-6">{sections.overview.summary}</p>
 
-      {/* 탭 네비게이션 */}
-      <div className="flex flex-wrap gap-1 border-b mb-6">
+      <div className="flex gap-1 border-b mb-6 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
         {TABS.map(({ key, label }) => (
           <button
             key={key}
@@ -158,7 +143,6 @@ export default function HackathonDetailPage() {
         ))}
       </div>
 
-      {/* 탭 콘텐츠 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
 
         {/* ========== 개요 ========== */}
@@ -236,6 +220,9 @@ export default function HackathonDetailPage() {
         {activeTab === 'schedule' && (
           <div>
             <h2 className="text-lg font-bold mb-4">일정</h2>
+
+            <DdayCountdown milestones={sections.schedule.milestones} />
+
             <div className="relative">
               {sections.schedule.milestones.map((m, i) => {
                 const date = new Date(m.at);
@@ -282,12 +269,13 @@ export default function HackathonDetailPage() {
           </div>
         )}
 
-        {/* ========== 팀 (보강) ========== */}
+        {/* ========== 팀 ========== */}
         {activeTab === 'teams' && (
           <div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
               <h2 className="text-lg font-bold">참여 팀</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+
                 <button
                   onClick={() => setShowTeamPopup(true)}
                   className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
@@ -330,27 +318,20 @@ export default function HackathonDetailPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500 mr-2">{t.memberCount}명</span>
-                        {/* 초대/수락/거절 버튼 */}
                         {!inviteStatus[t.teamCode] && (
-                          <button
-                            onClick={() => handleInvite(t.teamCode)}
-                            className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors"
-                          >
+                          <button onClick={() => handleInvite(t.teamCode)}
+                            className="text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:bg-blue-200 transition-colors">
                             초대
                           </button>
                         )}
                         {inviteStatus[t.teamCode] === 'pending' && (
                           <div className="flex gap-1">
-                            <button
-                              onClick={() => handleAccept(t.teamCode)}
-                              className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors"
-                            >
+                            <button onClick={() => handleAccept(t.teamCode)}
+                              className="text-xs bg-green-100 text-green-700 px-3 py-1.5 rounded-lg hover:bg-green-200 transition-colors">
                               수락
                             </button>
-                            <button
-                              onClick={() => handleReject(t.teamCode)}
-                              className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors"
-                            >
+                            <button onClick={() => handleReject(t.teamCode)}
+                              className="text-xs bg-red-100 text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-200 transition-colors">
                               거절
                             </button>
                           </div>
@@ -368,7 +349,6 @@ export default function HackathonDetailPage() {
               </div>
             )}
 
-            {/* 팀 구성 유의사항 팝업 */}
             {showTeamPopup && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-2xl">
@@ -376,27 +356,19 @@ export default function HackathonDetailPage() {
                   <div className="space-y-3 mb-6">
                     <div className="flex items-start gap-2">
                       <span className="text-blue-500 mt-0.5">•</span>
-                      <p className="text-sm text-gray-700">
-                        개인 참가 {sections.overview.teamPolicy.allowSolo ? '가능' : '불가'}합니다.
-                      </p>
+                      <p className="text-sm text-gray-700">개인 참가 {sections.overview.teamPolicy.allowSolo ? '가능' : '불가'}합니다.</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-blue-500 mt-0.5">•</span>
-                      <p className="text-sm text-gray-700">
-                        최대 팀원 수는 <strong>{sections.overview.teamPolicy.maxTeamSize}명</strong>입니다.
-                      </p>
+                      <p className="text-sm text-gray-700">최대 팀원 수는 <strong>{sections.overview.teamPolicy.maxTeamSize}명</strong>입니다.</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-blue-500 mt-0.5">•</span>
-                      <p className="text-sm text-gray-700">
-                        팀 구성 후 해커톤 기간 중 팀 변경이 제한될 수 있습니다.
-                      </p>
+                      <p className="text-sm text-gray-700">팀 구성 후 해커톤 기간 중 팀 변경이 제한될 수 있습니다.</p>
                     </div>
                     <div className="flex items-start gap-2">
                       <span className="text-blue-500 mt-0.5">•</span>
-                      <p className="text-sm text-gray-700">
-                        팀 내 역할 분담을 명확히 하고, 제출 마감일을 반드시 확인하세요.
-                      </p>
+                      <p className="text-sm text-gray-700">팀 내 역할 분담을 명확히 하고, 제출 마감일을 반드시 확인하세요.</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -404,10 +376,8 @@ export default function HackathonDetailPage() {
                       className="flex-1 bg-blue-600 text-white text-center px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                       팀 만들러 가기
                     </Link>
-                    <button
-                      onClick={() => setShowTeamPopup(false)}
-                      className="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
-                    >
+                    <button onClick={() => setShowTeamPopup(false)}
+                      className="flex-1 bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
                       닫기
                     </button>
                   </div>
@@ -417,10 +387,18 @@ export default function HackathonDetailPage() {
           </div>
         )}
 
-        {/* ========== 제출 (보강) ========== */}
+        {/* ========== 제출 ========== */}
         {activeTab === 'submit' && (
           <div>
             <h2 className="text-lg font-bold mb-4">제출</h2>
+
+            {/* 제출 진행률 */}
+            {sections.submit.submissionItems && (
+              <SubmitProgress
+                submissionItems={sections.submit.submissionItems}
+                submissions={submissions}
+              />
+            )}
 
             {/* 제출 가이드 */}
             <div className="bg-blue-50 rounded-lg p-4 mb-6">
@@ -443,7 +421,6 @@ export default function HackathonDetailPage() {
                   placeholder="팀명을 입력하세요" />
               </div>
 
-              {/* 해커톤별 제출 항목 */}
               {sections.submit.submissionItems ? (
                 sections.submit.submissionItems.map(item => (
                   <div key={item.key}>
@@ -521,7 +498,7 @@ export default function HackathonDetailPage() {
                   제출하기
                 </button>
                 <button onClick={() => {
-                  setSubmitForm({ plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: '' });
+                  setSubmitForm({ plan: '', webUrl: '', pdfUrl: '', teamName: '', notes: '', web: '', pdf: '' });
                   setSubmitFile(null);
                 }}
                   className="bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
@@ -539,28 +516,18 @@ export default function HackathonDetailPage() {
                     <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg p-4">
                       <div>
                         <p className="font-medium text-sm">{s.teamName}</p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(s.submittedAt).toLocaleString('ko-KR')}
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">{new Date(s.submittedAt).toLocaleString('ko-KR')}</p>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {s.artifacts.plan && (
-                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">📝 기획서</span>
-                          )}
-                          {s.artifacts.webUrl && (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">🌐 웹링크</span>
-                          )}
-                          {s.artifacts.pdfUrl && (
-                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">📄 PDF</span>
-                          )}
+                          {s.artifacts.plan && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">📝 기획서</span>}
+                          {s.artifacts.webUrl && <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">🌐 웹링크</span>}
+                          {s.artifacts.pdfUrl && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">📄 PDF</span>}
                           {s.artifacts.fileName && (
                             <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded">
                               📎 {s.artifacts.fileName} ({s.artifacts.fileSize})
                             </span>
                           )}
                         </div>
-                        {s.notes && (
-                          <p className="text-xs text-gray-400 mt-1">💬 {s.notes}</p>
-                        )}
+                        {s.notes && <p className="text-xs text-gray-400 mt-1">💬 {s.notes}</p>}
                       </div>
                       <button onClick={() => handleRemoveSubmission(s.teamName)}
                         className="text-xs text-red-500 hover:text-red-700 font-medium">취소</button>
@@ -572,7 +539,7 @@ export default function HackathonDetailPage() {
           </div>
         )}
 
-        {/* ========== 리더보드 (보강) ========== */}
+        {/* ========== 리더보드 ========== */}
         {activeTab === 'leaderboard' && (
           <div>
             <h2 className="text-lg font-bold mb-2">리더보드</h2>
@@ -613,12 +580,9 @@ export default function HackathonDetailPage() {
                       {entries.map((entry, idx) => {
                         const isUnsubmitted = entry.score === -1;
                         const medal = entry.rank === 1 ? '🥇' : entry.rank === 2 ? '🥈' : entry.rank === 3 ? '🥉' : '';
-
                         return (
                           <tr key={idx} className={`border-b ${isUnsubmitted ? 'bg-gray-50 opacity-60' : 'hover:bg-gray-50'}`}>
-                            <td className="px-4 py-3">
-                              {isUnsubmitted ? '-' : `${medal} ${entry.rank}`}
-                            </td>
+                            <td className="px-4 py-3">{isUnsubmitted ? '-' : `${medal} ${entry.rank}`}</td>
                             <td className="px-4 py-3 font-medium">{entry.teamName}</td>
                             <td className="px-4 py-3">
                               {isUnsubmitted ? (
@@ -629,12 +593,8 @@ export default function HackathonDetailPage() {
                             </td>
                             {hasBreakdown && (
                               <>
-                                <td className="px-4 py-3">
-                                  {isUnsubmitted ? '-' : entry.scoreBreakdown?.participant ?? '-'}
-                                </td>
-                                <td className="px-4 py-3">
-                                  {isUnsubmitted ? '-' : entry.scoreBreakdown?.judge ?? '-'}
-                                </td>
+                                <td className="px-4 py-3">{isUnsubmitted ? '-' : entry.scoreBreakdown?.participant ?? '-'}</td>
+                                <td className="px-4 py-3">{isUnsubmitted ? '-' : entry.scoreBreakdown?.judge ?? '-'}</td>
                               </>
                             )}
                             <td className="px-4 py-3 text-gray-500">

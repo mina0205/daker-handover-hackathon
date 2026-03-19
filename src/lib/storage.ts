@@ -123,3 +123,17 @@ export function toggleBookmark(slug: string): boolean {
   localStorage.setItem('bookmarks', JSON.stringify(bookmarks));
   return idx === -1; // true = 추가됨, false = 제거됨
 }
+
+// 쪽지
+export function getMessages(): Record<string, { text: string; sentAt: string }[]> {
+  try {
+    return JSON.parse(localStorage.getItem('messages') || '{}');
+  } catch { return {}; }
+}
+
+export function addMessage(teamCode: string, text: string) {
+  const messages = getMessages();
+  if (!messages[teamCode]) messages[teamCode] = [];
+  messages[teamCode].push({ text, sentAt: new Date().toISOString() });
+  localStorage.setItem('messages', JSON.stringify(messages));
+}

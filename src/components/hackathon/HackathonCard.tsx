@@ -10,12 +10,29 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   ended: { label: '종료', color: 'bg-gray-100 text-gray-500' },
 };
 
+function getDdayBadge(deadlineStr: string): { label: string; color: string } | null {
+  const now = new Date();
+  const deadline = new Date(deadlineStr);
+  const diffMs = deadline.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return null;
+  if (diffDays === 0) return { label: 'D-Day', color: 'bg-red-500 text-white' };
+  if (diffDays <= 3) return { label: `D-${diffDays}`, color: 'bg-red-500 text-white' };
+  if (diffDays <= 7) return { label: `D-${diffDays}`, color: 'bg-orange-400 text-white' };
+  if (diffDays <= 14) return { label: `D-${diffDays}`, color: 'bg-yellow-400 text-yellow-800' };
+  if (diffDays <= 30) return { label: `D-${diffDays}`, color: 'bg-blue-100 text-blue-700' };
+  return null;
+}
+
+
 export default function HackathonCard({ hackathon }: { hackathon: Hackathon }) {
   const [teamCount, setTeamCount] = useState(0);
   const [bookmarked, setBookmarked] = useState(false);
   const status = STATUS_MAP[hackathon.status] || STATUS_MAP.ended;
   const deadline = new Date(hackathon.period.submissionDeadlineAt).toLocaleDateString('ko-KR');
   const end = new Date(hackathon.period.endAt).toLocaleDateString('ko-KR');
+  const ddayBadge = getDdayBadge(hackathon.period.submissionDeadlineAt);
 
   useEffect(() => {
     setTeamCount(getTeams(hackathon.slug).length);
@@ -40,6 +57,13 @@ export default function HackathonCard({ hackathon }: { hackathon: Hackathon }) {
         >
           {bookmarked ? '⭐' : '☆'}
         </button>
+
+        {/* D-Day 긴급 배지 */}
+        {ddayBadge && (
+          <div className={`absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm ${ddayBadge.color}`}>
+            🔥 {ddayBadge.label}
+          </div>
+        )}
 
         {/* 썸네일 */}
         <div className="h-40 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">

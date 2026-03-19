@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { getTeams, getHackathons, addTeam, updateTeam } from '@/lib/storage';
+import { getTeams, getHackathons, addTeam, updateTeam,getMessages, addMessage } from '@/lib/storage';
 import { Team, Hackathon } from '@/lib/types';
 import EmptyState from '@/components/common/EmptyState';
 import Loading from '@/components/common/Loading';
@@ -41,24 +41,36 @@ export default function CampPage() {
   // 쪽지/채팅 모달
   const [messageTarget, setMessageTarget] = useState<Team | null>(null);
   const [message, setMessage] = useState('');
-  const [sentMessages, setSentMessages] = useState<Record<string, string[]>>({});
+  const [sentMessages, setSentMessages] = useState<Record<string, { text: string; sentAt: string }[]>>({});
+
 
   useEffect(() => {
     setHackathons(getHackathons());
     refreshTeams();
+    setSentMessages(getMessages());
     setLoading(false);
   }, []);
+
 
   const refreshTeams = () => {
     setTeams(getTeams());
   };
 
   // 필터 적용
-const filteredTeams = teams.filter(t => {
-  if (selectedHackathon && t.hackathonSlug !== selectedHackathon) return false;
-  if (positionFilter && !t.lookingFor.includes(positionFilter)) return false;
-  return true;
-});
+ const filteredTeams = teams
+  .filter(t => {
+    if (selectedHackathon && t.hackathonSlug !== selectedHackathon) return false;
+    if (positionFilter && !t.lookingFor.includes(positionFilter)) return false;
+    return true;
+  })
+  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+// NEW 배지: 3일 이내 생성된 팀
+const isNewTeam = (createdAt: string) => {
+  const diffMs = new Date().getTime() - new Date(createdAt).getTime();
+  return diffMs < 3 * 24 * 60 * 60 * 1000;
+};
+
 
 // 전체 팀에서 모든 포지션 추출
 const allPositions = Array.from(new Set(teams.flatMap(t => t.lookingFor))).filter(Boolean);
@@ -133,20 +145,19 @@ const allPositions = Array.from(new Set(teams.flatMap(t => t.lookingFor))).filte
       alert('메시지를 입력해주세요.');
       return;
     }
-    setSentMessages(prev => ({
-      ...prev,
-      [messageTarget.teamCode]: [...(prev[messageTarget.teamCode] || []), message],
-    }));
+    addMessage(messageTarget.teamCode, message);
+    setSentMessages(getMessages());
     setMessage('');
     alert(`${messageTarget.name} 팀에게 쪽지를 보냈습니다!`);
     setMessageTarget(null);
   };
 
+
   if (loading) return <Loading />;
 
   return (
     <div>
-      
+
      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
         <h1 className="text-2xl font-bold text-gray-900">팀원 모집</h1>
         <button
@@ -289,7 +300,14 @@ const allPositions = Array.from(new Set(teams.flatMap(t => t.lookingFor))).filte
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-lg">{t.name}</h3>
+                      <h3 className="font-bold text-lg">
+                        {t.name}
+                        {isNewTeam(t.createdAt) && (
+                          <span className="ml-2 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full font-bold animate-pulse">
+                            NEW
+                          </span>
+                        )}
+                      </h3>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         t.isOpen ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-500'
                       }`}>
@@ -320,13 +338,18 @@ const allPositions = Array.from(new Set(teams.flatMap(t => t.lookingFor))).filte
 
                 {/* 보낸 쪽지 표시 */}
                 {teamMessages.length > 0 && (
-                  <div className="bg-blue-50 rounded-lg p-3 mb-3">
-                    <p className="text-xs font-medium text-blue-700 mb-1">💬 보낸 쪽지 ({teamMessages.length})</p>
-                    {teamMessages.map((msg, i) => (
-                      <p key={i} className="text-xs text-blue-600">• {msg}</p>
-                    ))}
-                  </div>
-                )}
+                <div className="bg-blue-50 rounded-lg p-3 mb-3">
+                  <p className="text-xs font-medium text-blue-700 mb-1">💬 보낸 쪽지 ({teamMessages.length})</p>
+                  {teamMessages.map((msg, i) => (
+                    <div key={i} className="flex items-start justify-between">
+                      <p className="text-xs text-blue-600">• {msg.text}</p>
+                      <span className="text-xs text-blue-400 whitespace-nowrap ml-2">
+                        {new Date(msg.sentAt).toLocaleDateString('ko-KR')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="text-xs text-gray-400">

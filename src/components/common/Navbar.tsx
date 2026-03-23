@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/hackathons', label: '해커톤' },
   { href: '/camp', label: '팀 모집' },
   { href: '/rankings', label: '랭킹' },
+  { href: '/mypage', label: '마이페이지' },
 ];
 
 export default function Navbar() {

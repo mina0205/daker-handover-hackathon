@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/common/Navbar';
 import StorageInitializer from '@/components/common/StorageInitializer';
-
-const geist = Geist({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: '해커톤 플랫폼',
@@ -14,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ko">
-      <body className={`${geist.className} bg-gray-50 min-h-screen`}>
+      <body className="bg-gray-50 min-h-screen">
         <StorageInitializer />
         <Navbar />
         <main className="max-w-6xl mx-auto px-4 py-8">

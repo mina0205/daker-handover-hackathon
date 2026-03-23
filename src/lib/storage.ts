@@ -82,10 +82,11 @@ export function getLeaderboard(hackathonSlug: string): Leaderboard | null {
 }
 
 // 제출물
-export function getSubmissions(hackathonSlug: string): Submission[] {
+export function getSubmissions(hackathonSlug?: string): Submission[] {
   try {
     const all: Submission[] = JSON.parse(localStorage.getItem(KEYS.submissions) || '[]');
-    return all.filter(s => s.hackathonSlug === hackathonSlug);
+    if (hackathonSlug) return all.filter((s) => s.hackathonSlug === hackathonSlug);
+    return all;
   } catch { return []; }
 }
 
